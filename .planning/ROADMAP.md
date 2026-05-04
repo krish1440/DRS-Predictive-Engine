@@ -6,7 +6,9 @@ Building a high-fidelity, broadcast-quality Decision Review System (DRS) simulat
 ## Phases
 
 - [x] **Phase 1: Environment and Physics** - Set up the 3D pitch and core ballistics engine.
-- [ ] **Phase 2: Advanced Ballistics** - Implement spin (Magnus Effect) and refined pitch interaction.
+- [x] **Phase 2: Advanced Ballistics** - Implement spin (Magnus Effect) and refined pitch interaction.
+- [x] **Phase 3: Visual Polish & Broadcast Graphics** - Glowing trails, broadcast UI, camera pans.
+- [x] **Phase 4: LBW Logic & Review Flow** - Predictive path, decision logic, umpire's call.
 
 ## Phase Details
 
@@ -30,4 +32,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1 | 3/3 | Complete | 2026-05-04 |
-| 2 | 0/0 | Not started | - |
+| 2 | 2/2 | Complete | 2026-05-04 |
+| 3 | 1/1 | Complete | 2026-05-04 |
+| 4 | 1/1 | Complete | 2026-05-04 |

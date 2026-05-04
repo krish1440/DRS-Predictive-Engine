@@ -4,17 +4,17 @@
 **Milestone 1: The Lab (Core Engine)**
 
 ## Current Phase
-**Phase 2: Advanced Ballistics (2.0)**
+**Phase 5: Refinement & Polish (5.0)**
 
 ## Active Tasks
-- [ ] 02-01: Implement Magnus Effect for air-swing/spin
-- [ ] 02-02: Refine pitch interaction logic (Bounce/Friction)
+- [ ] 05-01: Add more camera angles (Top-down, Slomo)
+- [ ] 05-02: Final UI/UX polish and broadcast animations
 
 ## Recent Achievements
-- [x] Initial research completed
-- [x] Requirements defined
-- [x] Roadmap established
-- [x] Phase 1 Complete: 3D environment, core ballistics, and basic controls implemented.
+- [x] Phase 1: Environment and Physics Complete
+- [x] Phase 2: Advanced Ballistics Complete
+- [x] Phase 3: Broadcast Visuals Complete (Glowing Trails, Review Flow)
+- [x] Phase 4: LBW Logic Complete (Pitching/Impact/Wickets detection)
 
 ## Blockers
 None.
