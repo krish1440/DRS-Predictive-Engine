@@ -1,40 +1,33 @@
 # Roadmap: DRS Simulation
 
-## Milestone 1: The Lab (Core Engine)
-*Goal: A working physics-based simulation with basic 3D visuals.*
+## Overview
+Building a high-fidelity, broadcast-quality Decision Review System (DRS) simulation for cricket.
 
-### Phase 1: Environment & Physics (1.0)
-- [ ] Set up Three.js scene (Pitch, Stumps, Camera).
-- [ ] Implement core physics solver (Gravity + Drag).
-- [ ] Basic bowling controls (Speed + Target).
+## Phases
 
-### Phase 2: Advanced Ballistics (2.0)
-- [ ] Implement Magnus Effect (Spin-based curvature).
-- [ ] Refine Pitch Interaction (Bounce/Friction/Spin deviation).
-- [ ] Pre-calculation engine for smooth trajectories.
+- [x] **Phase 1: Environment and Physics** - Set up the 3D pitch and core ballistics engine.
+- [ ] **Phase 2: Advanced Ballistics** - Implement spin (Magnus Effect) and refined pitch interaction.
 
-## Milestone 2: The Broadcast (Visuals & Logic)
-*Goal: Professional-grade visuals and accurate DRS decision logic.*
+## Phase Details
 
-### Phase 3: Trajectory Rendering (3.0)
-- [ ] Implement glow/bloom shaders for path lines.
-- [ ] Add "Solid vs Dashed" path distinction.
-- [ ] Sequential path growth animation.
+### Phase 1: Environment and Physics
+**Goal**: A working 3D pitch environment with basic ballistics (Gravity + Drag).
+**Depends on**: Nothing
+**Requirements**: REQ-01, REQ-02, REQ-03
+**Success Criteria**:
+  1. User can see a 3D cricket pitch with regulation stumps.
+  2. User can "bowl" a ball with a specified speed.
+  3. Ball follows a realistic parabolic path with drag.
+**Plans**: 3 plans
 
-### Phase 4: DRS Decision Logic (4.0)
-- [ ] Implement Pitching/Impact/Wickets detection.
-- [ ] Add "Umpire's Call" logic.
-- [ ] Broadcast HUD & Checkpoint overlays.
+Plans:
+- [ ] 01-01: Initialize Three.js scene and load pitch/stumps assets.
+- [ ] 01-02: Implement core physics solver with Gravity and Drag.
+- [ ] 01-03: Add basic UI controls for Speed and Line/Length.
 
-## Milestone 3: The Polish (UX & Optimization)
-*Goal: A seamless, premium experience.*
+## Progress
 
-### Phase 5: Interaction & Replays (5.0)
-- [ ] Advanced bowling console (Gestures/Swipes).
-- [ ] Automated camera cuts and slow-motion replays.
-- [ ] Final visual polish (Lighting, Textures).
-
-### Phase 6: Optimization & Launch (6.0)
-- [ ] Performance audit and mobile optimization.
-- [ ] Cross-browser testing.
-- [ ] Final documentation.
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1 | 3/3 | Complete | 2026-05-04 |
+| 2 | 0/0 | Not started | - |

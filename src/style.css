@@ -1,0 +1,99 @@
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #050505;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: white;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+
+canvas {
+  display: block;
+}
+
+.overlay {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.overlay h1 {
+  margin: 0;
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2rem;
+  background: linear-gradient(90deg, #fff, #888);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+}
+
+.controls-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 10, 10, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  pointer-events: auto;
+  z-index: 100;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.control-group label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #888;
+  letter-spacing: 0.1rem;
+}
+
+.control-group input {
+  background: #222;
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  width: 80px;
+}
+
+.btn-bowl {
+  background: #e63946;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-bowl:hover {
+  background: #ff4d5a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4);
+}
+
+.btn-bowl:active {
+  transform: translateY(0);
+}

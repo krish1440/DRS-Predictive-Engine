@@ -4,18 +4,17 @@
 **Milestone 1: The Lab (Core Engine)**
 
 ## Current Phase
-**Phase 1: Environment & Physics (1.0)**
+**Phase 2: Advanced Ballistics (2.0)**
 
 ## Active Tasks
-- [ ] Set up Three.js scene (Pitch, Stumps, Camera)
-- [ ] Implement core physics solver (Gravity + Drag)
-- [ ] Basic bowling controls (Speed + Target)
+- [ ] 02-01: Implement Magnus Effect for air-swing/spin
+- [ ] 02-02: Refine pitch interaction logic (Bounce/Friction)
 
 ## Recent Achievements
 - [x] Initial research completed
 - [x] Requirements defined
 - [x] Roadmap established
-- [x] Technical stack selected (Three.js + Custom Physics)
+- [x] Phase 1 Complete: 3D environment, core ballistics, and basic controls implemented.
 
 ## Blockers
 None.
