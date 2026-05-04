@@ -16,46 +16,73 @@ canvas {
   display: block;
 }
 
-.overlay {
+/* Broadcast Style Overlays */
+.overlay-top {
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: 30px;
+  left: 30px;
   pointer-events: none;
   z-index: 100;
 }
 
-.overlay h1 {
+.overlay-top h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.2rem;
-  background: linear-gradient(90deg, #fff, #888);
+  letter-spacing: 0.3rem;
+  background: linear-gradient(90deg, #fff, #aaa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 900;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
-.controls-panel {
+.ai-badge {
+  font-size: 0.6rem;
+  background: rgba(188, 19, 254, 0.2);
+  color: #bc13fe;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(188, 19, 254, 0.5);
+  display: inline-block;
+  letter-spacing: 0.1rem;
+  font-weight: 900;
+  margin-top: 5px;
+}
+
+/* Sidebar Controls (Game Style) */
+.side-panel {
   position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(10, 10, 10, 0.8);
-  backdrop-filter: blur(10px);
-  padding: 20px;
-  border-radius: 12px;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 280px;
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(20px);
+  padding: 24px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
   display: flex;
+  flex-direction: column;
   gap: 20px;
-  align-items: center;
-  pointer-events: auto;
   z-index: 100;
+}
+
+.side-panel h2 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15rem;
+  color: #e63946;
+  margin: 0 0 10px 0;
+  border-bottom: 1px solid rgba(230, 57, 70, 0.3);
+  padding-bottom: 8px;
 }
 
 .control-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
 }
 
 .control-group label {
@@ -65,35 +92,190 @@ canvas {
   letter-spacing: 0.1rem;
 }
 
-.control-group input {
+/* Custom Select/Buttons for Ball Type */
+.ball-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.type-btn {
   background: #222;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aaa;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.type-btn.active {
+  background: #e63946;
   color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-family: inherit;
-  width: 80px;
+  border-color: #e63946;
+  box-shadow: 0 0 15px rgba(230, 57, 70, 0.3);
+}
+
+/* Range Sliders Styling */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #e63946;
+  cursor: pointer;
+  margin-top: -6px;
+}
+
+.value-display {
+  font-family: 'Mono', monospace;
+  font-size: 0.8rem;
+  color: #fff;
+  float: right;
 }
 
 .btn-bowl {
-  background: #e63946;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #e63946, #d62828);
   color: white;
   border: none;
-  padding: 12px 30px;
-  border-radius: 6px;
-  font-weight: 700;
+  padding: 16px;
+  border-radius: 10px;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.1rem;
+  letter-spacing: 0.2rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-bowl:hover {
-  background: #ff4d5a;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4);
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(230, 57, 70, 0.5);
 }
 
-.btn-bowl:active {
-  transform: translateY(0);
+/* Instructions */
+.help-text {
+  font-size: 0.65rem;
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.btn-review {
+  background: #3a86ff;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.2rem;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+}
+
+.btn-review:hover {
+  background: #4a96ff;
+  box-shadow: 0 5px 15px rgba(58, 134, 255, 0.4);
+}
+
+/* DRS Decision Panel (Left Side) */
+.drs-panel {
+  position: absolute;
+  top: 30px;
+  left: 30px; /* Moved from right to left */
+  width: 220px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 1000;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.decision-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.decision-row .label {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+}
+
+.decision-row .result {
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* Status Colors */
+.result.in-line { color: #00ff88; }
+.result.hitting { color: #00ff88; }
+.result.outside { color: #ff3333; }
+.result.missing { color: #ff3333; }
+.result.umpires-call { color: #ffcc00; }
+
+.final-decision {
+  margin-top: 5px;
+  padding: 15px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 900;
+  background: #ff3333;
+  color: white;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+}
+
+.final-decision.not-out { background: #00aa00; }
+
+/* Locked UI State */
+.side-panel.locked {
+  background: rgba(5, 5, 5, 0.95);
+  border-color: rgba(230, 57, 70, 0.4);
+}
+
+.side-panel.locked .control-group, 
+.side-panel.locked h2,
+.side-panel.locked .btn-bowl,
+.side-panel.locked .btn-review:not(#resetBtn) {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.side-panel.locked #resetBtn {
+  background: #e63946;
+  opacity: 1;
+  pointer-events: auto;
+  box-shadow: 0 0 20px rgba(230, 57, 70, 0.4);
 }

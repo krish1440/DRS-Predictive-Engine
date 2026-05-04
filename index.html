@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DRS Simulation | Hawk-Eye Precision</title>
+    <title>DRS Simulation | Hawk-Eye Pro</title>
     <link rel="stylesheet" href="/src/style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,24 +12,71 @@
   <body>
     <div id="app"></div>
     
-    <div class="overlay">
-      <h1>DRS SIMULATION</h1>
+    <div class="overlay-top">
+      <h1>DRS AI PREDICTIVE ENGINE</h1>
+      <div class="ai-badge">NEURAL INFERENCE ACTIVE</div>
     </div>
 
-    <div class="controls-panel">
-      <div class="control-group">
-        <label>Speed (KPH)</label>
-        <input type="number" id="speed" value="145" min="80" max="160">
+    <!-- DRS Decision Panel (Moved to Left) -->
+    <div id="drsDecision" class="drs-panel drs-left" style="display:none;">
+      <div class="decision-row" id="rowPitching">
+        <span class="label">PITCHING</span>
+        <span class="result">---</span>
       </div>
-      <div class="control-group">
-        <label>Line</label>
-        <input type="number" id="line" value="0.0" step="0.1" min="-1" max="1">
+      <div class="decision-row" id="rowImpact">
+        <span class="label">IMPACT</span>
+        <span class="result">---</span>
       </div>
-      <div class="control-group">
-        <label>Length</label>
-        <input type="number" id="length" value="4.0" step="0.1" min="1" max="10">
+      <div class="decision-row" id="rowWickets">
+        <span class="label">WICKETS</span>
+        <span class="result">---</span>
       </div>
-      <button id="bowlBtn" class="btn-bowl">BOWL</button>
+      <div class="final-decision" id="finalDecision">NOT OUT</div>
+    </div>
+
+    <div class="side-panel">
+      <h2>Bowling Configuration</h2>
+      
+      <div class="control-group">
+        <label>Ball Type</label>
+        <div class="ball-type-grid">
+          <button class="type-btn active" data-type="fast">FAST</button>
+          <button class="type-btn" data-type="swing">SWING</button>
+          <button class="type-btn" data-type="offspin">OFF-SPIN</button>
+          <button class="type-btn" data-type="legspin">LEG-SPIN</button>
+          <button class="type-btn" data-type="topspin">TOP-SPIN</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>Release Speed <span id="speedVal" class="value-display">145 km/h</span></label>
+        <input type="range" id="speed" min="80" max="160" value="145">
+      </div>
+
+      <div class="control-group" id="swingControl" style="display:none;">
+        <label>Swing Amount <span id="swingVal" class="value-display">0.0</span></label>
+        <input type="range" id="swing" min="-1" max="1" step="0.1" value="0">
+      </div>
+
+      <div class="control-group" id="spinControl" style="display:none;">
+        <label id="turnLabel">Turn Amount</label>
+        <span id="turnVal" class="value-display">0.0</span>
+        <input type="range" id="turn" min="-2" max="2" step="0.1" value="0">
+      </div>
+
+      <div class="control-group">
+        <label>Trajectory Precision</label>
+        <div class="help-text">Click on the pitch to set target marker</div>
+      </div>
+
+      <button id="bowlBtn" class="btn-bowl">BOWL NOW</button>
+      <button id="reviewBtn" class="btn-review" style="display:none;">START REVIEW</button>
+      <div style="display: flex; gap: 10px;">
+        <button id="camBtn" class="btn-review" style="background:#444; flex: 1;">CAM</button>
+        <button id="resetBtn" class="btn-review" style="background:#222; flex: 1;">RESET</button>
+      </div>
+      
+      <div class="help-text">Simulation predicts path post-impact</div>
     </div>
 
     <script type="module" src="/src/main.js"></script>
