@@ -28,4 +28,5 @@ var/
 wheels/
 *.egg-info/
 .installed.cfg
-*.egg.planning/
+*.egg
+.planning/
