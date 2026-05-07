@@ -9,6 +9,8 @@ class DRSSimulation {
     this.scene.background = new THREE.Color(0x050505);
 
     this.ballType = 'fast';
+    this.handedness = 'rhb'; // rhb or lhb
+    this.bowlerHand = 'right'; // right or left
     this.targetPos = new THREE.Vector3(0, 0, 4);
     this.isReviewing = false;
     this.currentCamMode = 0;
@@ -23,6 +25,7 @@ class DRSSimulation {
     this.initBatsman();
     this.initVirtualCameras();
     this.initControls();
+    this.updateUILabels();
     
     this.solver = new BallisticsSolver();
     this.isAnimating = false;
@@ -43,32 +46,92 @@ class DRSSimulation {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.container.appendChild(this.renderer.domElement);
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
   }
 
   initLights() {
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+    
+    // Main stadium floodlights
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    mainLight.position.set(5, 10, 5);
+    mainLight.position.set(10, 15, -5);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.camera.left = -10;
+    mainLight.shadow.camera.right = 10;
+    mainLight.shadow.camera.top = 10;
+    mainLight.shadow.camera.bottom = -10;
     this.scene.add(mainLight);
+
+    // Rim light for Batsman
+    const rimLight = new THREE.SpotLight(0x00ffff, 4);
+    rimLight.position.set(0, 5, 15);
+    rimLight.target.position.set(0, 0, 8.5);
+    rimLight.angle = Math.PI / 6;
+    rimLight.penumbra = 0.5;
+    this.scene.add(rimLight);
+    this.scene.add(rimLight.target);
+
+    // Spotlight on the Pitch
+    const pitchLight = new THREE.SpotLight(0xffffff, 2);
+    pitchLight.position.set(0, 15, 0);
+    pitchLight.angle = Math.PI / 4;
+    pitchLight.penumbra = 0.3;
+    pitchLight.castShadow = true;
+    this.scene.add(pitchLight);
   }
 
   initEnvironment() {
-    // Pitch
+    // 1. Realistic Pitch
+    // Using a group to add more detail (crease lines, etc.)
+    const pitchGroup = new THREE.Group();
+    
+    // Main Pitch Body (Grass/Dirt blend look)
     const pitchGeometry = new THREE.BoxGeometry(3.05, 0.1, 22);
-    const pitchMaterial = new THREE.MeshStandardMaterial({ color: 0x967969 });
+    const pitchMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x967969,
+      roughness: 0.8,
+      metalness: 0.1
+    });
     this.pitch = new THREE.Mesh(pitchGeometry, pitchMaterial);
     this.pitch.position.y = -0.05;
-    this.scene.add(this.pitch);
+    pitchGroup.add(this.pitch);
+
+    // Crease Lines (Popping Crease, Bowling Crease)
+    const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1.0 });
+    const createLine = (z, width, depth) => {
+      const line = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), lineMat);
+      line.rotation.x = -Math.PI / 2;
+      line.position.set(0, 0.002, z);
+      pitchGroup.add(line);
+    };
+
+    // Crease lines for both ends
+    [10.06, -10.06].forEach(z => {
+      createLine(z, 3.05, 0.05); // Bowling Crease
+      const sign = z > 0 ? 1 : -1;
+      createLine(z - (sign * 1.22), 3.05, 0.05); // Popping Crease
+    });
+
+    this.scene.add(pitchGroup);
 
     this.initStumps(10.06);
     this.initStumps(-10.06);
     
-    // Add Wicket Plane (for visual impact check)
+    // Wicket Plane (Impact visualization)
     const wicketPlaneGeo = new THREE.PlaneGeometry(0.228, 0.711);
-    const wicketPlaneMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.1, side: THREE.DoubleSide });
+    const wicketPlaneMat = new THREE.MeshBasicMaterial({ 
+      color: 0x00ffff, 
+      transparent: true, 
+      opacity: 0.05, 
+      side: THREE.DoubleSide 
+    });
     this.wicketPlane = new THREE.Mesh(wicketPlaneGeo, wicketPlaneMat);
     this.wicketPlane.position.set(0, 0.355, 10.06);
     this.scene.add(this.wicketPlane);
@@ -76,46 +139,185 @@ class DRSSimulation {
     this.initCenterLine();
   }
 
+  getReleasePos() {
+    // Right hand bowler releases from the right side of the stumps (Negative X in our +Z view)
+    // Left hand bowler releases from the left side (Positive X in our +Z view)
+    const x = this.bowlerHand === 'right' ? -0.55 : 0.55;
+    return new THREE.Vector3(x, 2.2, -10);
+  }
+
   initStumps(zPos) {
     const stumpHeight = 0.711;
-    const stumpRadius = 0.019; // ~1.5 inch diameter
+    const stumpRadius = 0.019;
     const group = new THREE.Group();
-    const stumpGeo = new THREE.CylinderGeometry(stumpRadius, stumpRadius, stumpHeight, 12);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
-    // Centers at -0.095, 0, 0.095 gives total width of 0.228m (9 inches)
+    
+    // Metallic/Modern Stumps
+    const stumpGeo = new THREE.CylinderGeometry(stumpRadius, stumpRadius, stumpHeight, 24);
+    const stumpMat = new THREE.MeshStandardMaterial({ 
+      color: 0xffffff, 
+      metalness: 0.6, 
+      roughness: 0.1,
+      emissive: 0x222222 
+    });
+    
+    const bailGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.1, 12);
+    const bailMat = new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0x440000 });
+
     for (let i = -1; i <= 1; i++) {
-      const s = new THREE.Mesh(stumpGeo, mat);
+      const s = new THREE.Mesh(stumpGeo, stumpMat);
       s.position.set(i * 0.095, stumpHeight / 2, zPos);
       group.add(s);
+      
+      // Top LEDs (Modern DRS style)
+      const led = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+      led.position.set(i * 0.095, stumpHeight + 0.01, zPos);
+      group.add(led);
     }
+    
+    // Bails
+    const bail1 = new THREE.Mesh(bailGeo, bailMat);
+    bail1.rotation.z = Math.PI / 2;
+    bail1.position.set(-0.0475, stumpHeight + 0.015, zPos);
+    group.add(bail1);
+    
+    const bail2 = new THREE.Mesh(bailGeo, bailMat);
+    bail2.rotation.z = Math.PI / 2;
+    bail2.position.set(0.0475, stumpHeight + 0.015, zPos);
+    group.add(bail2);
+
     this.scene.add(group);
+  }
+
+  updateUILabels() {
+    const swingLabel = document.getElementById('swingLabel');
+    const turnLabel = document.getElementById('turnLabel');
+    const isCutter = this.ballType === 'cutter' || this.ballType === 'slower';
+    const mainLabel = isCutter ? 'CUT' : 'TURN';
+    
+    if (this.handedness === 'rhb') {
+      if (swingLabel) swingLabel.innerHTML = 'SWING: <span class="dir-hint"> - LEFT [IN]</span> / <span class="dir-hint">+ RIGHT [OUT]</span>';
+      if (turnLabel) turnLabel.innerHTML = `${mainLabel}: <span class="dir-hint"> - LEFT [OFF]</span> / <span class="dir-hint">+ RIGHT [LEG]</span>`;
+    } else {
+      if (swingLabel) swingLabel.innerHTML = 'SWING: <span class="dir-hint"> - LEFT [OUT]</span> / <span class="dir-hint">+ RIGHT [IN]</span>';
+      if (turnLabel) turnLabel.innerHTML = `${mainLabel}: <span class="dir-hint"> - LEFT [LEG]</span> / <span class="dir-hint">+ RIGHT [OFF]</span>`;
+    }
+  }
+
+  resetBatsman() {
+    if (this.batsman) this.scene.remove(this.batsman);
+    this.initBatsman();
+    this.updateUILabels();
   }
 
   initBatsman() {
     const group = new THREE.Group();
-    // Torso
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-    torso.position.y = 1.0;
-    group.add(torso);
-    // Head
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-    head.position.y = 1.45;
-    group.add(head);
-    // Pads (Left/Right)
-    const padGeo = new THREE.BoxGeometry(0.18, 0.6, 0.2);
-    const padMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
-    const leftPad = new THREE.Mesh(padGeo, padMat);
-    leftPad.position.set(-0.15, 0.3, 0);
-    group.add(leftPad);
-    const rightPad = new THREE.Mesh(padGeo, padMat);
-    rightPad.position.set(0.15, 0.3, 0);
-    group.add(rightPad);
     
-    group.position.set(0, 0, 8.5);
+    // Premium Materials
+    const whiteMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.1 });
+    const skinMat = new THREE.MeshPhysicalMaterial({ color: 0xffdbac, roughness: 0.7, clearcoat: 0.1 });
+    const helmetMat = new THREE.MeshPhysicalMaterial({ color: 0x001a4d, metalness: 0.7, roughness: 0.2, clearcoat: 1.0 });
+    const gloveMat = new THREE.MeshPhysicalMaterial({ color: 0xeeeeee, roughness: 0.4 });
+    const batMat = new THREE.MeshPhysicalMaterial({ color: 0xccaa88, roughness: 0.6, metalness: 0.0 });
+    const padMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.6, clearcoat: 0.2 });
+
+    const applyShadows = (mesh) => {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    };
+
+    // 1. Lower Body & Pads
+    const createPad = (xOffset) => {
+      const padGroup = new THREE.Group();
+      // Main Pad Body (Rounded)
+      const body = applyShadows(new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.45, 4, 16), padMat));
+      padGroup.add(body);
+      
+      // Pad Ribs
+      for (let i = -2; i <= 2; i++) {
+        const rib = applyShadows(new THREE.Mesh(new THREE.CapsuleGeometry(0.015, 0.45, 2, 8), padMat));
+        rib.position.set(i * 0.04, 0, 0.08);
+        padGroup.add(rib);
+      }
+      
+      padGroup.position.set(xOffset, 0.325, 0);
+      return padGroup;
+    };
+
+    group.add(createPad(-0.16));
+    group.add(createPad(0.16));
+
+    // 2. Torso (Capsule based for organic look)
+    const torso = applyShadows(new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.4, 4, 16), whiteMat));
+    torso.position.y = 0.95;
+    group.add(torso);
+    
+    // Shoulders
+    const shoulderGeo = new THREE.SphereGeometry(0.09, 16, 16);
+    const leftShoulder = applyShadows(new THREE.Mesh(shoulderGeo, whiteMat));
+    leftShoulder.position.set(-0.22, 1.15, 0);
+    group.add(leftShoulder);
+    const rightShoulder = applyShadows(new THREE.Mesh(shoulderGeo, whiteMat));
+    rightShoulder.position.set(0.22, 1.15, 0);
+    group.add(rightShoulder);
+
+    // 3. Arms (Articulated Capsules)
+    const armGeo = new THREE.CapsuleGeometry(0.05, 0.25, 4, 12);
+    const rightArm = applyShadows(new THREE.Mesh(armGeo, whiteMat));
+    rightArm.position.set(0.32, 0.95, 0);
+    rightArm.rotation.z = -Math.PI / 8;
+    group.add(rightArm);
+    
+    const leftArm = applyShadows(new THREE.Mesh(armGeo, whiteMat));
+    leftArm.position.set(-0.32, 0.95, 0.15);
+    leftArm.rotation.x = -Math.PI / 3;
+    group.add(leftArm);
+
+    // 4. Head & Helmet
+    const head = applyShadows(new THREE.Mesh(new THREE.SphereGeometry(0.11, 24, 24), skinMat));
+    head.position.y = 1.4;
+    group.add(head);
+
+    const helmet = applyShadows(new THREE.Mesh(new THREE.SphereGeometry(0.13, 24, 24, 0, Math.PI * 2, 0, Math.PI / 1.8), helmetMat));
+    helmet.position.y = 1.41;
+    group.add(helmet);
+    
+    // Detailed Helmet Grill
+    const grillGroup = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+      const g = applyShadows(new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.005, 8, 24, Math.PI), new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 1 })));
+      g.position.y = 1.35 + (i * 0.03);
+      g.position.z = 0.05;
+      g.rotation.x = Math.PI / 2.2;
+      grillGroup.add(g);
+    }
+    group.add(grillGroup);
+
+    // 5. Cricket Bat (Refined)
+    const batGroup = new THREE.Group();
+    const batBlade = applyShadows(new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.82, 0.05), batMat));
+    batBlade.position.y = -0.41;
+    batGroup.add(batBlade);
+    
+    const batHandle = applyShadows(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.35), new THREE.MeshStandardMaterial({ color: 0x111111 })));
+    batHandle.position.y = 0.175;
+    batGroup.add(batHandle);
+    
+    batGroup.position.set(0.35, 0.6, 0.35); // Positive X is Left side (where RHB stands)
+    batGroup.rotation.set(-Math.PI / 3.5, 0, -Math.PI / 7);
+    group.add(batGroup);
+
+    // Gloves
+    const glove = applyShadows(new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.05, 4, 12), gloveMat));
+    glove.position.set(0.32, 0.72, 0.3);
+    group.add(glove);
+
+    // Final Positioning and Scale
+    group.rotation.y = Math.PI;
+    if (this.handedness === 'lhb') group.scale.x = -1; // Flipping to Negative X for LHB (Right side)
+    group.position.set(0, 0, 9.2); 
     this.batsman = group;
     this.scene.add(this.batsman);
-    
-    // Collision Box
     this.batsmanBox = new THREE.Box3().setFromObject(this.batsman);
   }
 
@@ -175,18 +377,34 @@ class DRSSimulation {
   }
 
   initTargetMarker() {
-    const geo = new THREE.TorusGeometry(0.2, 0.02, 16, 100);
+    // Outer Ring
+    const geo = new THREE.TorusGeometry(0.2, 0.015, 16, 100);
     const mat = new THREE.MeshBasicMaterial({ color: 0xe63946 });
     this.targetMarker = new THREE.Mesh(geo, mat);
     this.targetMarker.rotation.x = -Math.PI / 2;
     this.targetMarker.position.set(0, 0.01, 4);
     this.scene.add(this.targetMarker);
 
-    const innerGeo = new THREE.CircleGeometry(0.18, 32);
-    const innerMat = new THREE.MeshBasicMaterial({ color: 0xe63946, transparent: true, opacity: 0.3 });
-    this.targetPulse = new THREE.Mesh(innerGeo, innerMat);
-    this.targetPulse.rotation.x = -Math.PI / 2;
-    this.targetMarker.add(this.targetPulse);
+    // Inner Hemisphere (Semisphere) instead of a flat circle
+    const innerGeo = new THREE.SphereGeometry(0.18, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    const innerMat = new THREE.MeshBasicMaterial({ 
+      color: 0xe63946, 
+      transparent: true, 
+      opacity: 0.4,
+      side: THREE.DoubleSide
+    });
+    this.targetTip = new THREE.Mesh(innerGeo, innerMat);
+    // Note: SphereGeometry with phiLength is already "standing up", 
+    // but our targetMarker parent is rotated -PI/2. 
+    // So we need to rotate the pulse to point "up" relative to the world.
+    this.targetTip.rotation.x = Math.PI / 2; 
+    this.targetMarker.add(this.targetTip);
+
+    // Ball Tip Indicator (Animated Ping Ring)
+    const pingGeo = new THREE.TorusGeometry(0.19, 0.008, 16, 64);
+    const pingMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+    this.targetPing = new THREE.Mesh(pingGeo, pingMat);
+    this.targetMarker.add(this.targetPing);
   }
 
   initTrajectoryLine() {
@@ -194,15 +412,46 @@ class DRSSimulation {
     this.drsTrail = null;
   }
 
+  setUILock(locked) {
+    if (locked) {
+      this.controlsPanel.classList.add('locked');
+      // Disable all inputs except reset
+      this.controlsPanel.querySelectorAll('input, button:not(#resetBtn)').forEach(el => el.disabled = true);
+    } else {
+      this.controlsPanel.classList.remove('locked');
+      this.controlsPanel.querySelectorAll('input, button').forEach(el => el.disabled = false);
+    }
+  }
+
   initControls() {
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
     this.orbitControls.enableDamping = true;
+
+    document.querySelectorAll('.bowler-hand-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.bowler-hand-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        this.bowlerHand = e.target.dataset.hand;
+        this.updateTrajectoryPreview();
+      });
+    });
+
+    document.querySelectorAll('.hand-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.hand-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        this.handedness = e.target.dataset.hand;
+        this.resetBatsman();
+        this.updateTrajectoryPreview();
+      });
+    });
 
     document.querySelectorAll('.type-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         this.ballType = e.target.dataset.type;
+        this.applyBallTypePresets();
         this.updateUIPanels();
       });
     });
@@ -227,6 +476,98 @@ class DRSSimulation {
     
     // UI Lock helper
     this.controlsPanel = document.querySelector('.side-panel');
+  }
+
+  applyBallTypePresets() {
+    const speedEl = document.getElementById('speed');
+    const swingEl = document.getElementById('swing');
+    const turnEl = document.getElementById('turn');
+
+    switch(this.ballType) {
+      case 'fast':
+        speedEl.value = 148;
+        swingEl.value = 0;
+        turnEl.value = 0;
+        this.ball.material.color.set(0xee0000); // Bright Metallic Red
+        this.ball.material.metalness = 0.9;
+        this.ball.material.roughness = 0.1;
+        break;
+      case 'swing':
+        speedEl.value = 128;
+        swingEl.value = 4;
+        turnEl.value = 0;
+        this.ball.material.color.set(0x990000); // Deep Leather Red
+        this.ball.material.metalness = 0.3;
+        this.ball.material.roughness = 0.4;
+        break;
+      case 'spin':
+        speedEl.value = 85;
+        swingEl.value = 0;
+        turnEl.value = 0; // Let user decide direction
+        this.ball.material.color.set(0xaa2222); // Neutral Spin Red
+        this.ball.material.metalness = 0.1;
+        break;
+      case 'topspin':
+        speedEl.value = 92;
+        swingEl.value = 0;
+        turnEl.value = 0;
+        this.ball.material.color.set(0xff4400); // Orange-Red for visibility
+        this.ball.material.metalness = 0.5;
+        break;
+      case 'cutter':
+        speedEl.value = 132;
+        swingEl.value = 0;
+        turnEl.value = -0.5; // Off-cutter by default
+        this.ball.material.color.set(0xaa4444);
+        this.ball.material.metalness = 0.4;
+        break;
+      case 'slower':
+        speedEl.value = 112;
+        swingEl.value = 0.5;
+        turnEl.value = 0;
+        this.ball.material.color.set(0x882222);
+        this.ball.material.metalness = 0.0; // Rough old ball
+        break;
+      case 'bouncer':
+        speedEl.value = 145;
+        swingEl.value = 0;
+        turnEl.value = 0;
+        this.ball.material.color.set(0xff0000); // Aggressive Red
+        this.ball.material.metalness = 0.9;
+        break;
+      case 'knuckle':
+        speedEl.value = 118;
+        swingEl.value = 0;
+        turnEl.value = 0;
+        this.ball.material.color.set(0xdddddd); // Scuffed white-red ball
+        this.ball.material.metalness = 0.2;
+        break;
+    }
+
+    this.updateUIPanels(); // Sync panel visibility
+    
+    // Update displays
+    ['speed', 'swing', 'turn'].forEach(id => {
+      const el = document.getElementById(id);
+      const display = document.getElementById(id + 'Val');
+      if (display) display.textContent = id === 'speed' ? `${el.value} km/h` : el.value;
+    });
+
+    this.updateTrajectoryPreview();
+  }
+
+  updateUIPanels() {
+    const swingCtrl = document.getElementById('swingControl');
+    const spinCtrl = document.getElementById('spinControl');
+    const type = this.ballType;
+
+    // Show Swing control ONLY for SWING ball type (Traditional seam movement)
+    swingCtrl.style.display = (type === 'swing') ? 'block' : 'none';
+    
+    // Show Turn/Cut control for SPIN, TOPSPIN, CUTTER and SLOWER (Off-the-pitch movement)
+    spinCtrl.style.display = (type === 'spin' || type === 'topspin' || type === 'cutter' || type === 'slower') ? 'block' : 'none';
+    
+    this.updateUILabels();
   }
 
   setUILock(locked) {
@@ -290,10 +631,6 @@ class DRSSimulation {
     }
   }
 
-  updateUIPanels() {
-    document.getElementById('swingControl').style.display = (this.ballType === 'swing') ? 'flex' : 'none';
-    document.getElementById('spinControl').style.display = (this.ballType.includes('spin')) ? 'flex' : 'none';
-  }
 
   onPitchClick(event) {
     if (this.isAnimating || this.isReviewing) return;
@@ -322,9 +659,9 @@ class DRSSimulation {
     const speedMs = parseFloat(document.getElementById('speed').value) / 3.6;
     const swing = parseFloat(document.getElementById('swing').value);
     const turn = parseFloat(document.getElementById('turn').value);
-    const initialPos = new THREE.Vector3(0, 2.2, -10);
-    const initialVel = this.solver.findVelocityToHitTarget(initialPos, this.targetPos, speedMs, swing);
-    this.currentTrajectory = this.solver.solveTrajectory(initialPos, initialVel, swing, turn);
+    const initialPos = this.getReleasePos();
+    const initialVel = this.solver.findVelocityToHitTarget(initialPos, this.targetPos, speedMs, swing, this.ballType);
+    this.currentTrajectory = this.solver.solveTrajectory(initialPos, initialVel, swing, turn, this.ballType);
     
     // Simple preview line - keep invisible by default as per request
     if (this.previewLine) this.scene.remove(this.previewLine);
@@ -452,7 +789,7 @@ class DRSSimulation {
       }
 
       // Show Decision Panel
-      const decision = this.solver.calculateLBW(this.aiTrajectory);
+      const decision = this.solver.calculateLBW(this.aiTrajectory, this.handedness);
       if (decision) {
         this.showDecision(decision);
         finalDecision.textContent = decision.isOut ? 'OUT' : 'NOT OUT';
@@ -502,25 +839,33 @@ class DRSSimulation {
     requestAnimationFrame(() => this.animate());
     this.orbitControls.update();
 
-    if (this.targetPulse) {
-      const s = 1 + Math.sin(Date.now() * 0.005) * 0.2;
-      this.targetPulse.scale.set(s, s, 1);
+    if (this.targetTip) {
+      const s = 1 + Math.sin(Date.now() * 0.004) * 0.05;
+      this.targetTip.scale.set(s, s, s);
+    }
+
+    if (this.targetPing) {
+      const time = Date.now() * 0.002;
+      const cycle = (time % 1); // 0 to 1 linear
+      this.targetPing.scale.set(cycle, cycle, 1);
+      this.targetPing.material.opacity = (1 - cycle) * 0.6;
     }
 
     if (this.isAnimating) {
-      if (this.animProgress < this.currentTrajectory.length) {
-        const nextPos = this.currentTrajectory[this.animProgress].position;
+      const idx = Math.floor(this.animProgress);
+      if (idx < this.currentTrajectory.length) {
+        const nextPos = this.currentTrajectory[idx].position;
         
-        // Collision detection with Batsman
-        if (nextPos.z > 8.3 && nextPos.z < 8.7 && Math.abs(nextPos.x) < 0.4 && nextPos.y < 0.8) {
+        // Collision detection with Batsman (Updated for new Z=9.2 position)
+        if (nextPos.z > 9.0 && nextPos.z < 9.4 && Math.abs(nextPos.x) < 0.4 && nextPos.y < 0.8) {
           this.isAnimating = false;
-          this.impactFrame = this.animProgress;
+          this.impactFrame = idx;
           document.getElementById('reviewBtn').style.display = 'block';
           return;
         }
 
         this.ball.position.copy(nextPos);
-        this.animProgress += 2; // Fast play
+        this.animProgress += 2.4; // Minor reduction from 3.0
       } else {
         this.isAnimating = false;
         document.getElementById('reviewBtn').style.display = 'block';
@@ -535,7 +880,7 @@ class DRSSimulation {
         // Update decision panel visibility
         const p = this.aiTrajectory[this.animProgress];
         if (p && p.hasBounced) document.getElementById('rowPitching').style.opacity = 1;
-        if (p && p.position.z > 8.5) document.getElementById('rowImpact').style.opacity = 1;
+        if (p && p.position.z > 9.2) document.getElementById('rowImpact').style.opacity = 1;
         if (p && p.position.z > 10) document.getElementById('rowWickets').style.opacity = 1;
       }
     }
