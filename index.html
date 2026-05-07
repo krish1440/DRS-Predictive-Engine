@@ -13,8 +13,11 @@
     <div id="app"></div>
     
     <div class="overlay-top">
-      <h1>DRS AI PREDICTIVE ENGINE</h1>
-      <div class="ai-badge">NEURAL INFERENCE ACTIVE</div>
+      <div class="logo-box">
+        <h1>HAWK-EYE <span class="pro-tag">PRO</span></h1>
+        <div class="sub-title">DRS PREDICTIVE ENGINE v3.0</div>
+      </div>
+      <div class="ai-badge">REAL-TIME PHYSICS ENGINE ACTIVE</div>
     </div>
 
     <!-- DRS Decision Panel (Moved to Left) -->
@@ -38,28 +41,48 @@
       <h2>Bowling Configuration</h2>
       
       <div class="control-group">
+        <label>Bowler Handedness</label>
+        <div class="ball-type-grid">
+          <button class="bowler-hand-btn active" data-hand="right">Right Arm</button>
+          <button class="bowler-hand-btn" data-hand="left">Left Arm</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>Batsman Handedness</label>
+        <div class="ball-type-grid">
+          <button class="hand-btn active" data-hand="rhb">RHB</button>
+          <button class="hand-btn" data-hand="lhb">LHB</button>
+        </div>
+      </div>
+
+      <div class="control-group">
         <label>Ball Type</label>
         <div class="ball-type-grid">
           <button class="type-btn active" data-type="fast">FAST</button>
           <button class="type-btn" data-type="swing">SWING</button>
-          <button class="type-btn" data-type="offspin">OFF-SPIN</button>
-          <button class="type-btn" data-type="legspin">LEG-SPIN</button>
+          <button class="type-btn" data-type="spin">SPIN</button>
           <button class="type-btn" data-type="topspin">TOP-SPIN</button>
+          <button class="type-btn" data-type="cutter">CUTTER</button>
+          <button class="type-btn" data-type="slower">SLOWER-BALL</button>
+          <button class="type-btn" data-type="bouncer">BOUNCER</button>
+          <button class="type-btn" data-type="knuckle">KNUCKLE-BALL</button>
         </div>
       </div>
 
       <div class="control-group">
         <label>Release Speed <span id="speedVal" class="value-display">145 km/h</span></label>
-        <input type="range" id="speed" min="80" max="160" value="145">
+        <input type="range" id="speed" min="60" max="160" value="145">
       </div>
 
       <div class="control-group" id="swingControl" style="display:none;">
-        <label>Swing Amount <span id="swingVal" class="value-display">0.0</span></label>
-        <input type="range" id="swing" min="-1" max="1" step="0.1" value="0">
+        <label id="swingLabel">Swing ( - Left / + Right )</label>
+        <span id="swingVal" class="value-display">0.0</span>
+        <input type="range" id="swing" min="-2" max="2" step="0.1" value="0">
       </div>
 
       <div class="control-group" id="spinControl" style="display:none;">
-        <label id="turnLabel">Turn Amount</label>
+        <label id="turnLabel">Turn ( - Left / + Right )</label>
         <span id="turnVal" class="value-display">0.0</span>
         <input type="range" id="turn" min="-2" max="2" step="0.1" value="0">
       </div>
